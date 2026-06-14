@@ -1,70 +1,58 @@
 import random
 from io import BytesIO
+
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.files.base import ContentFile
-from PIL import Image, ImageDraw
-from django.contrib.auth.models import (
-    AbstractBaseUser,
-    BaseUserManager,
-    PermissionsMixin,
-)
 from django.db import models
+from django.urls import reverse
+from PIL import Image, ImageDraw
+
+from .constants import (
+    ABOUT_MAX_LEN,
+    AVATAR_SIZE,
+    AVATAR_TEXT_COLOR,
+    AVATAR_TEXT_POS,
+    PHONE_MAX_LEN,
+    SKILL_NAME_MAX_LEN,
+    USER_NAME_MAX_LEN,
+)
+from .managers import UserManager
 
 
 class Skill(models.Model):
-    name = models.CharField(max_length=124, unique=True)
+    name = models.CharField(max_length=SKILL_NAME_MAX_LEN, unique=True)
 
     def __str__(self):
         return self.name
 
 
-class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError("Email обязателен")
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-        return self.create_user(email, password, **extra_fields)
-
-
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
-    name = models.CharField(max_length=124)
-    surname = models.CharField(max_length=124)
+    name = models.CharField(max_length=USER_NAME_MAX_LEN)
+    surname = models.CharField(max_length=USER_NAME_MAX_LEN)
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
-    phone = models.CharField(max_length=12)
+    phone = models.CharField(max_length=PHONE_MAX_LEN)
     github_url = models.URLField(blank=True, null=True)
-    about = models.TextField(max_length=256, blank=True, null=True)
+    about = models.TextField(max_length=ABOUT_MAX_LEN, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     skills = models.ManyToManyField(Skill, related_name="users", blank=True)
 
-    objects = CustomUserManager()
+    objects = UserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name", "surname", "phone"]
 
     def save(self, *args, **kwargs):
-        # Автогенерация аватарки с первой буквой имени
         if not self.avatar and self.name:
             img = Image.new(
                 "RGB",
-                (200, 200),
-                color=(
-                    random.randint(50, 200),
-                    random.randint(50, 200),
-                    random.randint(50, 200),
-                ),
+                AVATAR_SIZE,
+                color=tuple(random.randint(50, 200) for _ in range(3)),
             )
             d = ImageDraw.Draw(img)
-            d.text((80, 80), self.name[0].upper(), fill=(255, 255, 255))
+            d.text(AVATAR_TEXT_POS, self.name[0].upper(), fill=AVATAR_TEXT_COLOR)
             buffer = BytesIO()
             img.save(buffer, format="PNG")
             self.avatar.save(
@@ -74,3 +62,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.name} {self.surname}"
+
+    def get_absolute_url(self):
+        return reverse("users:user_details", kwargs={"pk": self.pk})

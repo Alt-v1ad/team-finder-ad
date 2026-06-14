@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
+from team_finder.mixins import GitHubUrlValidatorMixin
+
 User = get_user_model()
 
 
@@ -17,7 +19,7 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput)
 
 
-class ProfileEditForm(forms.ModelForm):
+class ProfileEditForm(forms.ModelForm, GitHubUrlValidatorMixin):
     class Meta:
         model = User
         fields = ["name", "surname", "avatar", "about", "phone", "github_url"]
@@ -43,12 +45,6 @@ class ProfileEditForm(forms.ModelForm):
         if qs.exists() or qs_norm.exists():
             raise forms.ValidationError("Этот номер телефона уже используется.")
         return phone
-
-    def clean_github_url(self):
-        url = self.cleaned_data.get("github_url")
-        if url and "github.com" not in url:
-            raise forms.ValidationError("Ссылка должна вести на профиль GitHub.")
-        return url
 
 
 class ChangePasswordForm(forms.Form):
