@@ -6,7 +6,7 @@ from .constants import ProjectStatus
 from .models import Project
 
 
-class ProjectForm(forms.ModelForm, GitHubUrlValidatorMixin):
+class ProjectForm(GitHubUrlValidatorMixin, forms.ModelForm):
     status = forms.ChoiceField(choices=ProjectStatus.CHOICES, widget=forms.Select)
 
     class Meta:

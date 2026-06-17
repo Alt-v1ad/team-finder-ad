@@ -13,7 +13,7 @@ urlpatterns = [
     path("change-password/", views.change_password, name="change_password"),
     path("skills/", views.skills_search, name="skills_search"),
     path("<int:pk>/", views.user_details, name="user_details"),
-    path("<int:pk>/skills/add", views.add_skill, name="add_skill"),
+    path("<int:pk>/skills/add/", views.add_skill, name="add_skill"),
     path(
         "<int:pk>/skills/<int:skill_id>/remove/",
         views.remove_skill,

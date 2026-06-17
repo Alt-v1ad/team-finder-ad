@@ -19,7 +19,7 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput)
 
 
-class ProfileEditForm(forms.ModelForm, GitHubUrlValidatorMixin):
+class ProfileEditForm(GitHubUrlValidatorMixin, forms.ModelForm):
     class Meta:
         model = User
         fields = ["name", "surname", "avatar", "about", "phone", "github_url"]
